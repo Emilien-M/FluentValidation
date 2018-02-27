@@ -28,6 +28,7 @@ namespace FluentValidation.AspNetCore {
 	using System.Collections.Generic;
 	using Microsoft.AspNetCore.Http;
 	using Microsoft.Extensions.DependencyInjection.Extensions;
+	using Microsoft.Extensions.Logging;
 
 	public static class FluentValidationMvcExtensions {
 		/// <summary>
@@ -79,10 +80,19 @@ namespace FluentValidation.AspNetCore {
 				services.Add(ServiceDescriptor.Transient(typeof(IValidatorFactory), config.ValidatorFactoryType ?? typeof(ServiceProviderValidatorFactory)));
 			}
 
-			services.Add(ServiceDescriptor.Singleton<IObjectModelValidator, FluentValidationObjectModelValidator>(s => {
+//			services.Add(ServiceDescriptor.Singleton<IObjectModelValidator, FluentValidationObjectModelValidator>(s => {
+//				var options = s.GetRequiredService<IOptions<MvcOptions>>().Value;
+//				var metadataProvider = s.GetRequiredService<IModelMetadataProvider>();
+//				return new FluentValidationObjectModelValidator(metadataProvider, options.ModelValidatorProviders, config.RunDefaultMvcValidationAfterFluentValidationExecutes, config.ImplicitlyValidateChildProperties);
+//			}));
+
+			services.Add(ServiceDescriptor.Singleton<ParameterBinder, FluentValidationParameterBinder>(s => {
 				var options = s.GetRequiredService<IOptions<MvcOptions>>().Value;
+				var loggerFactory = s.GetRequiredService<ILoggerFactory>();
 				var metadataProvider = s.GetRequiredService<IModelMetadataProvider>();
-				return new FluentValidationObjectModelValidator(metadataProvider, options.ModelValidatorProviders, config.RunDefaultMvcValidationAfterFluentValidationExecutes, config.ImplicitlyValidateChildProperties);
+				var modelBinderFactory = s.GetRequiredService<IModelBinderFactory>();
+				var modelValidatorProvider = new CompositeModelValidatorProvider(options.ModelValidatorProviders);
+				return new FluentValidationParameterBinder(metadataProvider, modelBinderFactory, modelValidatorProvider, loggerFactory, config.RunDefaultMvcValidationAfterFluentValidationExecutes, config.ImplicitlyValidateChildProperties);
 			}));
 
 

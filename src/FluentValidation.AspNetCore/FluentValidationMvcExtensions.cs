@@ -98,6 +98,11 @@ namespace FluentValidation.AspNetCore {
 
 			if (config.ClientsideEnabled)
 			{
+				// Clientside validation requires access to the Httpcontext, but MVC's clientside API does not provide it,
+				// so we need to inject the HttpContextAccessor instead. 
+				// This is not registered by default, so add it in if the user hasn't done so.
+				services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+				
 				services.TryAddEnumerable(ServiceDescriptor.Transient<IConfigureOptions<MvcViewOptions>, FluentValidationViewOptionsSetup>(s =>
 					{
 						return new FluentValidationViewOptionsSetup(config.ClientsideConfig, s.GetService<IHttpContextAccessor>());

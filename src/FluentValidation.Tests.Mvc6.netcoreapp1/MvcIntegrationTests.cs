@@ -69,8 +69,8 @@
 
 			var result = await _webApp.GetErrors("UpdateModel", form);
 
-			result.IsValidField("test.Name").ShouldBeFalse();
-			result.GetError("test.Name").ShouldEqual("Validation Failed");
+			result.IsValidField("Name").ShouldBeFalse();
+			result.GetError("Name").ShouldEqual("Validation Failed");
 		}
 
 

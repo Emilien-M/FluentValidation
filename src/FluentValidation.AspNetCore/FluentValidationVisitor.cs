@@ -9,13 +9,11 @@
 	internal class FluentValidationVisitor : ValidationVisitor {
 		public bool ValidateChildren { get; set; }
 		
-		public FluentValidationVisitor(ActionContext actionContext, IModelValidatorProvider validatorProvider, ValidatorCache validatorCache, IModelMetadataProvider metadataProvider, ValidationStateDictionary validationState) : base(actionContext, validatorProvider, validatorCache, metadataProvider, validationState)
-		{
+		public FluentValidationVisitor(ActionContext actionContext, IModelValidatorProvider validatorProvider, ValidatorCache validatorCache, IModelMetadataProvider metadataProvider, ValidationStateDictionary validationState) : base(actionContext, validatorProvider, validatorCache, metadataProvider, validationState) {
 			this.ValidateComplexTypesIfChildValidationFails = true;
 		}
 
-		protected override bool VisitChildren(IValidationStrategy strategy)
-		{
+		protected override bool VisitChildren(IValidationStrategy strategy) {
 			// If validting a collection property skip validation if validate children is off. 
 			// However we can't actually skip it here as otherwise this will affect DataAnnotaitons validation too.
 			// Instead store a list of objects to skip in the context, which the validator will check later. 

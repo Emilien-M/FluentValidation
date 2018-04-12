@@ -32,17 +32,17 @@ namespace FluentValidation.AspNetCore {
 	using Microsoft.AspNetCore.Mvc.ModelBinding;
 	using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
-	internal class FluentValidationObjectModelValidator : IObjectModelValidator {
-		private readonly IModelMetadataProvider _modelMetadataProvider;
+	internal class FluentValidationObjectModelValidator : ObjectModelValidator {
 		private readonly bool _runMvcValidation;
 		private readonly bool _implicitValidationEnabled;
 		private readonly ValidatorCache _validatorCache;
-		private readonly IModelValidatorProvider _compositeProvider;
 		private readonly FluentValidationModelValidatorProvider _fvProvider;
 
 		public FluentValidationObjectModelValidator(
 			IModelMetadataProvider modelMetadataProvider,
-			IList<IModelValidatorProvider> validatorProviders, bool runMvcValidation, bool implicitValidationEnabled) {
+			IList<IModelValidatorProvider> validatorProviders, bool runMvcValidation, bool implicitValidationEnabled)
+		: base(modelMetadataProvider, validatorProviders)
+		{
 
 			if (modelMetadataProvider == null) {
 				throw new ArgumentNullException(nameof(modelMetadataProvider));
@@ -52,48 +52,48 @@ namespace FluentValidation.AspNetCore {
 				throw new ArgumentNullException(nameof(validatorProviders));
 			}
 
-			_modelMetadataProvider = modelMetadataProvider;
 			_runMvcValidation = runMvcValidation;
 			_implicitValidationEnabled = implicitValidationEnabled;
 			_validatorCache = new ValidatorCache();
 			_fvProvider = validatorProviders.SingleOrDefault(x => x is FluentValidationModelValidatorProvider) as FluentValidationModelValidatorProvider;
-			_compositeProvider = new CompositeModelValidatorProvider(validatorProviders); //.Except(new IModelValidatorProvider[]{ _fvProvider }).ToList());
 		}
 
-		public void Validate(ActionContext actionContext, ValidationStateDictionary validationState, string prefix, object model) {
-
+		public override void Validate(ActionContext actionContext, ValidationStateDictionary validationState, string prefix, object model) {
 			var requiredErrorsNotHandledByFv = RemoveImplicitRequiredErrors(actionContext);
 
 			// Apply any customizations made with the CustomizeValidatorAttribute 
-			var metadata = model == null ? null : _modelMetadataProvider.GetMetadataForType(model.GetType());
 
 			if (model != null) {
 				var customizations = GetCustomizations(actionContext, model.GetType(), prefix);
 				actionContext.HttpContext.Items["_FV_Customizations"] = Tuple.Create(model, customizations);
 			}
 
-			// Setting as to whether we should run only FV or FV + the other validator providers
-			var validatorProvider = _runMvcValidation ? _compositeProvider : _fvProvider;
-
-			var visitor = new FluentValidationVisitor(
-				actionContext,
-				validatorProvider,
-				_validatorCache,
-				_modelMetadataProvider,
-				validationState)
-			{
-				ValidateChildren = _implicitValidationEnabled
-			};
-
-			visitor.Validate(metadata, prefix, model);
-
+			base.Validate(actionContext, validationState, prefix, model);
+			
 			// Re-add errors that we took out if FV didn't add a key. 
 			ReApplyImplicitRequiredErrorsNotHandledByFV(requiredErrorsNotHandledByFv);
 
 			// Remove duplicates. This can happen if someone has implicit child validation turned on and also adds an explicit child validator.
 			RemoveDuplicateModelstateEntries(actionContext);
 		}
+		
+		public override ValidationVisitor GetValidationVisitor(ActionContext actionContext, IModelValidatorProvider validatorProvider, ValidatorCache validatorCache, IModelMetadataProvider metadataProvider, ValidationStateDictionary validationState) {
+			// Setting as to whether we should run only FV or FV + the other validator providers
+			var validatorProviderToUse = _runMvcValidation ? validatorProvider : _fvProvider;
 
+			var visitor = new FluentValidationVisitor(
+				actionContext,
+				validatorProviderToUse,
+				validatorCache,
+				metadataProvider,
+				validationState)
+			{
+				ValidateChildren = _implicitValidationEnabled
+			};
+
+			return visitor;
+		}
+		
 		internal static void RemoveDuplicateModelstateEntries(ActionContext actionContext) {
 			foreach (var entry in actionContext.ModelState) {
 				if (entry.Value.ValidationState == ModelValidationState.Invalid) {

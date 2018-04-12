@@ -86,18 +86,7 @@ namespace FluentValidation.AspNetCore {
 				return new FluentValidationObjectModelValidator(metadataProvider, options.ModelValidatorProviders, config.RunDefaultMvcValidationAfterFluentValidationExecutes, config.ImplicitlyValidateChildProperties);
 			}));
 
-			services.Add(ServiceDescriptor.Singleton<ParameterBinder, FluentValidationParameterBinder>(s => {
-				var options = s.GetRequiredService<IOptions<MvcOptions>>().Value;
-				var loggerFactory = s.GetRequiredService<ILoggerFactory>();
-				var metadataProvider = s.GetRequiredService<IModelMetadataProvider>();
-				var modelBinderFactory = s.GetRequiredService<IModelBinderFactory>();
-				var modelValidatorProvider = new CompositeModelValidatorProvider(options.ModelValidatorProviders);
-				return new FluentValidationParameterBinder(metadataProvider, modelBinderFactory, modelValidatorProvider, loggerFactory, config.RunDefaultMvcValidationAfterFluentValidationExecutes, config.ImplicitlyValidateChildProperties);
-			}));
-
-
-			if (config.ClientsideEnabled)
-			{
+			if (config.ClientsideEnabled) {
 				// Clientside validation requires access to the Httpcontext, but MVC's clientside API does not provide it,
 				// so we need to inject the HttpContextAccessor instead. 
 				// This is not registered by default, so add it in if the user hasn't done so.
@@ -108,8 +97,6 @@ namespace FluentValidation.AspNetCore {
 						return new FluentValidationViewOptionsSetup(config.ClientsideConfig, s.GetService<IHttpContextAccessor>());
 					}));
 			}
-
-
 		}
 
 		/// <summary>

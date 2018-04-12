@@ -16,16 +16,10 @@
 // The latest version of this file can be found at https://github.com/jeremyskinner/FluentValidation
 #endregion
 
-
-using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
-
 namespace FluentValidation.AspNetCore {
 	using System;
 	using System.Collections.Generic;
-	using System.ComponentModel.DataAnnotations;
 	using System.Linq;
-	using System.Reflection;
-	using Microsoft.AspNetCore.Http;
 	using Microsoft.AspNetCore.Mvc;
 	using Microsoft.AspNetCore.Mvc.Controllers;
 	using Microsoft.AspNetCore.Mvc.Internal;
@@ -41,17 +35,7 @@ namespace FluentValidation.AspNetCore {
 		public FluentValidationObjectModelValidator(
 			IModelMetadataProvider modelMetadataProvider,
 			IList<IModelValidatorProvider> validatorProviders, bool runMvcValidation, bool implicitValidationEnabled)
-		: base(modelMetadataProvider, validatorProviders)
-		{
-
-			if (modelMetadataProvider == null) {
-				throw new ArgumentNullException(nameof(modelMetadataProvider));
-			}
-
-			if (validatorProviders == null) {
-				throw new ArgumentNullException(nameof(validatorProviders));
-			}
-
+		: base(modelMetadataProvider, validatorProviders) {
 			_runMvcValidation = runMvcValidation;
 			_implicitValidationEnabled = implicitValidationEnabled;
 			_validatorCache = new ValidatorCache();
@@ -100,7 +84,7 @@ namespace FluentValidation.AspNetCore {
 					var existing = new HashSet<string>();
 
 					foreach (var err in entry.Value.Errors.ToList()) {
-						//TOList to create a copy so we can remvoe the original
+						//ToList to create a copy so we can remove from the original
 						if (existing.Contains(err.ErrorMessage)) {
 							entry.Value.Errors.Remove(err);
 						}

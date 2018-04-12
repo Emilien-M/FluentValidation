@@ -48,8 +48,6 @@ namespace FluentValidation.AspNetCore {
 			{ typeof(LessThanOrEqualValidator), (context, rule, validator) => new RangeMaxClientValidator(rule, validator) },
 			{ typeof(EqualValidator), (context, rule, validator) => new EqualToClientValidator(rule, validator) },
 			{ typeof(CreditCardValidator), (context, rule, validator) => new CreditCardClientValidator(rule, validator) },
-			
-
 		};
 
 		public FluentValidationClientModelValidatorProvider(IHttpContextAccessor httpContextAccessor) {

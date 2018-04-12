@@ -98,9 +98,6 @@
 				return customizations.Item2; // the attribute
 			}
 			return new CustomizeValidatorAttribute();
-
 		}
 	}
-
-	
 }

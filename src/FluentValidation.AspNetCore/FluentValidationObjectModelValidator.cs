@@ -42,6 +42,25 @@ namespace FluentValidation.AspNetCore {
 			_fvProvider = validatorProviders.SingleOrDefault(x => x is FluentValidationModelValidatorProvider) as FluentValidationModelValidatorProvider;
 		}
 
+		public override void Validate(ActionContext actionContext, ValidationStateDictionary validationState, string prefix, object model, ModelMetadata metadata) {
+			var requiredErrorsNotHandledByFv = RemoveImplicitRequiredErrors(actionContext);
+
+			// Apply any customizations made with the CustomizeValidatorAttribute 
+
+			if (model != null) {
+				var customizations = GetCustomizations(actionContext, model.GetType(), prefix);
+				actionContext.HttpContext.Items["_FV_Customizations"] = Tuple.Create(model, customizations);
+			}
+
+			base.Validate(actionContext, validationState, prefix, model, metadata);
+			
+			// Re-add errors that we took out if FV didn't add a key. 
+			ReApplyImplicitRequiredErrorsNotHandledByFV(requiredErrorsNotHandledByFv);
+
+			// Remove duplicates. This can happen if someone has implicit child validation turned on and also adds an explicit child validator.
+			RemoveDuplicateModelstateEntries(actionContext);
+		}
+
 		public override void Validate(ActionContext actionContext, ValidationStateDictionary validationState, string prefix, object model) {
 			var requiredErrorsNotHandledByFv = RemoveImplicitRequiredErrors(actionContext);
 
